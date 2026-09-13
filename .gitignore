@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Data (never commit the dataset - 144MB, download from Kaggle)
+*.csv
+data/
+
+# Tooling state
+.omc/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store
