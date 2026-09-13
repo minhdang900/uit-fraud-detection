@@ -9,6 +9,9 @@ venv/
 *.csv
 data/
 
+# Secrets (run.sh generates .env with a random Jupyter token)
+.env
+
 # Tooling state
 .omc/
 .ipynb_checkpoints/

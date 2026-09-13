@@ -1,0 +1,30 @@
+services:
+  lab:
+    build:
+      context: .
+      target: base
+    image: uit-fraud-detection:dev
+    container_name: uit-fraud-lab
+    ports:
+      # Loopback only -- not reachable from the local network
+      - "127.0.0.1:8888:8888"
+    volumes:
+      # Source bind-mounted: host edits appear live in the container
+      - .:/work
+      # Anonymous volumes protect container state from the bind mount
+      - /work/.venv
+      # Named volume keeps JupyterLab UI settings across restarts
+      - jupyter-settings:/home/app/.jupyter
+    environment:
+      # No default on purpose: a committed token is a credential in git.
+      # run.sh generates a random one into .env (gitignored) on first run.
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN:?missing - run ./run.sh, which generates .env}
+      PYTHONPATH: /work
+      # Anonymous volumes mount root-owned; keep pytest's cache on writable tmp
+      PYTEST_ADDOPTS: "-o cache_dir=/tmp/.pytest_cache"
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  jupyter-settings:

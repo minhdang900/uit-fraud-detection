@@ -60,11 +60,36 @@ tests/test_fraud_cost.py 8 tests, every expectation hand-computed in its docstri
 docs/PLAN.md             implementation plan (consensus-reviewed)
 ```
 
-## Running the tests
+## Running it
+
+### Docker (recommended)
+
+```bash
+./run.sh          # build, start, wait for healthy, open JupyterLab
+./run.sh test     # run the test suite inside the container
+./run.sh logs     # follow logs
+./run.sh stop     # stop and remove
+```
+
+`run.sh` prints the URL with the token. On first run it generates a random
+192-bit token into `.env` (gitignored) — no token is committed to this repo.
+Override with `JUPYTER_TOKEN=... ./run.sh`.
+
+`notebooks/00_cost_model_demo.ipynb` is a smoke test — run all cells to confirm
+the container is wired up correctly.
+
+**Security:** the port is bound to `127.0.0.1` only, the container runs as a
+non-root user (uid 1001), and the token is random per machine. Do **not** add
+`--ServerApp.allow_origin=*` — it buys nothing (the browser is same-origin) and
+disables the CORS protection that stops a page you visit from driving the
+kernel, which executes arbitrary Python. Loopback binding does not help there,
+because the request originates from your own browser.
+
+### Without Docker
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install numpy pytest
+./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python -m pytest tests/ -v
 ```
 
