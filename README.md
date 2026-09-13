@@ -55,9 +55,12 @@ The CSV is **not** committed. Download it via the Kaggle API.
 ## Layout
 
 ```
-fraud_cost.py            cost model (test-driven)
-tests/test_fraud_cost.py 8 tests, every expectation hand-computed in its docstring
-docs/PLAN.md             implementation plan (consensus-reviewed)
+fraud_cost.py                cost model (test-driven)
+preprocessing.py             feature prep and splitting (test-driven)
+tests/                       11 tests, every expectation hand-computed
+notebooks/                   smoke test
+docs/PLAN.md                 implementation plan (consensus-reviewed)
+.github/workflows/tests.yml  CI: pytest on every push and PR
 ```
 
 ## Running it
@@ -87,8 +90,13 @@ because the request originates from your own browser.
 
 ### Without Docker
 
+The container is the canonical environment — `./run.sh test` is the reliable way
+to run the suite. If you do go local, **use Python 3.11** to match it; on older
+versions pip may fall back to building scikit-learn from source, which takes a
+very long time on Apple Silicon.
+
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python -m pytest tests/ -v
 ```
@@ -97,7 +105,7 @@ python3 -m venv .venv
 
 - [x] Cost model — `total_cost`, `cost_curve`, `policy_e_predict`, `optimal_threshold`, `undo_class_weight`, `best_amount_baseline`
 - [ ] EDA
-- [ ] Preprocessing
+- [~] Preprocessing — `hour_of_day`, `cyclic_encode_hour`, `stratified_split_60_20_20` done; scaling pending the dataset
 - [ ] Model matrix (≥3 models)
 - [ ] Evaluation & error analysis
 - [ ] Report + slides

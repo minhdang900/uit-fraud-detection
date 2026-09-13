@@ -15,6 +15,7 @@ data/
 # Tooling state
 .omc/
 .ipynb_checkpoints/
+Untitled*.ipynb
 
 # OS
 .DS_Store
