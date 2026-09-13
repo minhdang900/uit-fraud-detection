@@ -60,11 +60,31 @@ tests/test_fraud_cost.py 8 tests, every expectation hand-computed in its docstri
 docs/PLAN.md             implementation plan (consensus-reviewed)
 ```
 
-## Running the tests
+## Running it
+
+### Docker (recommended)
+
+```bash
+./run.sh          # build, start, wait for healthy, open JupyterLab
+./run.sh test     # run the test suite inside the container
+./run.sh logs     # follow logs
+./run.sh stop     # stop and remove
+```
+
+JupyterLab lands on <http://localhost:8888/lab?token=uit-fraud>.
+Override the token with `JUPYTER_TOKEN=... ./run.sh`.
+
+`notebooks/00_cost_model_demo.ipynb` is a smoke test — run all cells to confirm
+the container is wired up correctly.
+
+The port is bound to `127.0.0.1` only, so the lab is not reachable from your
+local network. The container runs as a non-root user (uid 1001).
+
+### Without Docker
 
 ```bash
 python3 -m venv .venv
-./.venv/bin/pip install numpy pytest
+./.venv/bin/pip install -r requirements.txt
 ./.venv/bin/python -m pytest tests/ -v
 ```
 

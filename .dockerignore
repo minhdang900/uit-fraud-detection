@@ -1,0 +1,15 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.git/
+.omc/
+.ipynb_checkpoints/
+*.csv
+data/
+docs/
+Dockerfile
+docker-compose.yml
+.dockerignore
+run.sh
