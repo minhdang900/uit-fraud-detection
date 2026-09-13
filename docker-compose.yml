@@ -16,8 +16,9 @@ services:
       # Named volume keeps JupyterLab UI settings across restarts
       - jupyter-settings:/home/app/.jupyter
     environment:
-      # Local dev token. Override: JUPYTER_TOKEN=... ./run.sh
-      JUPYTER_TOKEN: ${JUPYTER_TOKEN:-uit-fraud}
+      # No default on purpose: a committed token is a credential in git.
+      # run.sh generates a random one into .env (gitignored) on first run.
+      JUPYTER_TOKEN: ${JUPYTER_TOKEN:?missing - run ./run.sh, which generates .env}
       PYTHONPATH: /work
       # Anonymous volumes mount root-owned; keep pytest's cache on writable tmp
       PYTEST_ADDOPTS: "-o cache_dir=/tmp/.pytest_cache"

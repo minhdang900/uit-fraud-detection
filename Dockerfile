@@ -25,7 +25,11 @@ EXPOSE 8888
 HEALTHCHECK --interval=10s --timeout=5s --start-period=30s --retries=8 \
   CMD python -c "import urllib.request as u; u.urlopen('http://localhost:8888/api').read()" || exit 1
 
+# NOTE: do not add --ServerApp.allow_origin=*. The browser reaches this
+# same-origin, so it buys nothing, and it disables the CORS protection that
+# stops a malicious page you visit from driving this kernel (arbitrary code
+# execution). Loopback binding does not help: the request would come from
+# your own browser.
 CMD ["jupyter", "lab", \
      "--ip=0.0.0.0", "--port=8888", "--no-browser", \
-     "--ServerApp.root_dir=/work", \
-     "--ServerApp.allow_origin=*"]
+     "--ServerApp.root_dir=/work"]

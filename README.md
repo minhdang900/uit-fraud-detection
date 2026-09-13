@@ -71,14 +71,19 @@ docs/PLAN.md             implementation plan (consensus-reviewed)
 ./run.sh stop     # stop and remove
 ```
 
-JupyterLab lands on <http://localhost:8888/lab?token=uit-fraud>.
-Override the token with `JUPYTER_TOKEN=... ./run.sh`.
+`run.sh` prints the URL with the token. On first run it generates a random
+192-bit token into `.env` (gitignored) — no token is committed to this repo.
+Override with `JUPYTER_TOKEN=... ./run.sh`.
 
 `notebooks/00_cost_model_demo.ipynb` is a smoke test — run all cells to confirm
 the container is wired up correctly.
 
-The port is bound to `127.0.0.1` only, so the lab is not reachable from your
-local network. The container runs as a non-root user (uid 1001).
+**Security:** the port is bound to `127.0.0.1` only, the container runs as a
+non-root user (uid 1001), and the token is random per machine. Do **not** add
+`--ServerApp.allow_origin=*` — it buys nothing (the browser is same-origin) and
+disables the CORS protection that stops a page you visit from driving the
+kernel, which executes arbitrary Python. Loopback binding does not help there,
+because the request originates from your own browser.
 
 ### Without Docker
 

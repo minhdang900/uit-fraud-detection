@@ -7,7 +7,21 @@
 set -euo pipefail
 
 cd "$(dirname "$0")"
-TOKEN="${JUPYTER_TOKEN:-uit-fraud}"
+
+# A committed token is a credential in git, and any page you visit could try
+# it against localhost. Generate a random one per machine into .env, which is
+# gitignored and which docker compose reads automatically.
+if [ -n "${JUPYTER_TOKEN:-}" ]; then
+  TOKEN="$JUPYTER_TOKEN"
+elif [ -f .env ] && grep -q '^JUPYTER_TOKEN=' .env; then
+  TOKEN="$(grep '^JUPYTER_TOKEN=' .env | cut -d= -f2-)"
+else
+  TOKEN="$(openssl rand -hex 24 2>/dev/null || python3 -c 'import secrets;print(secrets.token_hex(24))')"
+  umask 077
+  printf 'JUPYTER_TOKEN=%s\n' "$TOKEN" > .env
+  echo "Generated a new token into .env (gitignored)."
+fi
+export JUPYTER_TOKEN="$TOKEN"
 URL="http://localhost:8888/lab?token=${TOKEN}"
 
 open_browser() {
@@ -37,11 +51,11 @@ wait_healthy() {
 
 case "${1:-up}" in
   up)
-    JUPYTER_TOKEN="$TOKEN" docker compose up -d --build
+    docker compose up -d --build
     wait_healthy
     echo
     echo "  JupyterLab : $URL"
-    echo "  Token      : $TOKEN"
+    echo "  Token      : stored in .env"
     echo "  Tests      : ./run.sh test"
     echo
     open_browser "$URL"
