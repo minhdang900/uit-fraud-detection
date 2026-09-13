@@ -1,0 +1,36 @@
+{
+  "date": "2026-09-13",
+  "selected_on": "validation split only; test not yet scored",
+  "c_review": 3.0,
+  "champions": [
+    {
+      "family": "xgb",
+      "arm": "balanced",
+      "cost": 3052.0499999999993,
+      "threshold": 0.01538227591663599,
+      "alert_rate": 0.0021242231663214073,
+      "pr_auc": 0.8227857733527525,
+      "fit_seconds": 1.1
+    },
+    {
+      "family": "rf",
+      "arm": "none",
+      "cost": 3382.7599999999984,
+      "threshold": 0.48,
+      "alert_rate": 0.0013868895052842245,
+      "pr_auc": 0.7991579319450322,
+      "fit_seconds": 5.8
+    },
+    {
+      "family": "logreg",
+      "arm": "none",
+      "cost": 3419.3499999999995,
+      "threshold": 0.0677217913055377,
+      "alert_rate": 0.0015975562655805625,
+      "pr_auc": 0.714164869176431,
+      "fit_seconds": 0.2
+    }
+  ],
+  "declared_winner": "xgb/balanced",
+  "note": "Declared BEFORE any test scoring. The headline number is this model's test cost whether or not it turns out lowest on test."
+}
