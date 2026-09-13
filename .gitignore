@@ -8,6 +8,8 @@ venv/
 # Data (never commit the dataset - 144MB, download from Kaggle)
 *.csv
 data/
+# ...but small derived result tables are part of the record
+!artifacts/*.csv
 
 # Secrets (run.sh generates .env with a random Jupyter token)
 .env
