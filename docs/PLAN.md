@@ -123,10 +123,38 @@ Inherits AC-1 … AC-20 from the spec, amended:
 - **20-minute CART briefing.** Two of three models rest on decision trees, which **have not been taught**. Cover: splitting criterion (Gini/entropy), depth, and why averaging deep trees reduces *variance* — which ties back to the bias-variance material from Buổi 05b. Also prepare: *why does SMOTE go inside the CV fold?* (synthesising before splitting leaks minority information across the fold boundary).
 - **Enumerate now, not in week 4:** the 10 report sections and the 6 rubric dataset questions, copied verbatim from `DoAnMonHoc` into the report skeleton. **Confirm which sections are model-independent** before assigning the weeks 1–3 drafting — the "sections 1–5" assumption below is unverified against the actual document.
 
-### Step 1 — EDA *(week 1)* → AC-1..AC-3
-- Verify `df.shape[0] == 284807`, `df.Class.sum() == 492`, zero nulls.
-- Class distribution; `Amount` fraud vs legit on **log scale**; fraud rate by hour.
-- **Record: total fraud Amount** (the flag-nothing baseline and the loss ceiling), **fraud Amount mean/std** (for the n_eff calculation), and **day-1 vs day-2 fraud count and Amount**.
+### Step 1 — EDA *(week 1)* → AC-1..AC-3 — ✅ **DATA VERIFIED 2026-09-13**
+
+All Step 1 asserts pass: `284,807` rows, `492` frauds (0.173%), **31 columns**, **0 nulls**, `Time` spans 172,792 s = 48.0 h exactly.
+
+**Correction to the earlier prediction.** The plan previously expected "fraud amounts are *smaller* on average than legitimate ones". That is **wrong on the mean**, and the true shape is more useful:
+
+| | fraud | legit |
+|---|---|---|
+| count | 492 | 284,315 |
+| mean | €122.21 | €88.29 |
+| **median** | **€9.25** | **€22.00** |
+| std | €256.42 | €250.10 |
+| max | €2,125.87 | €25,691.16 |
+
+The *typical* fraud is small — median €9.25, under half the legit median of €22.00 — but the **mean** exceeds legit because of a heavy right tail. Neither "smaller" nor "larger" describes it: **bimodal in cost terms**.
+
+**🎯 Headline finding for the presentation: 205 of 492 frauds (42%) are worth less than the €3 review fee, and 27 are exactly €0.** A cost-optimal policy therefore **ignores nearly half of all fraud on purpose** — reviewing a €1 fraud costs €3. Counterintuitive, concrete, and a direct consequence of the objective. Policy E produces this behaviour automatically; a global threshold cannot express it.
+
+**Verified constants — use these, do not re-derive:**
+
+| Constant | Value |
+|---|---|
+| Total fraud Amount (flag-nothing baseline) | **€60,127.97** |
+| Flag-everything baseline | 284,807 × €3 = **€854,421** (**14.2× worse** than doing nothing) |
+| Fraud Amount CV | 2.100 → 1 + CV² = 5.41 |
+| **n_eff for a 98-fraud test set** | **18.1** |
+| Day 1 | 144,786 rows, 281 frauds, €33,239.11 |
+| Day 2 | 140,021 rows, **211 frauds**, €26,888.86 |
+
+Day 2 holds **2.2× more frauds** than a random 20% test split (~98), so the temporal robustness check (T3) is statistically viable — R8 is closed.
+
+**Still to produce:** class-distribution plot, `Amount` log-scale histogram by class, fraud rate by `hour_of_day`, correlation scan.
 
 ### Step 2 — Preprocessing *(week 1)* → AC-4..AC-7
 - `hour_of_day = (Time // 3600) % 24`, **cyclically encoded** (`sin`/`cos`) — linear scaling puts 23:00 and 00:00 maximally apart.
@@ -198,7 +226,7 @@ Inherits AC-1 … AC-20 from the spec, amended:
 | R5 | ~~SMOTE OOM~~ **RF+SMOTE wall-clock** | Med | Med | *Re-rated: memory is a non-issue (~136 MB vs 12 GB). The real cost is RF training on a doubled set.* SMOTE is T2; drop it first if week 2 slips |
 | R6 | Data leakage via scaler fit on full data | Med | **Crit** | Assertion + peer review of the split cell |
 | R7 | Colab disconnect mid-run loses everything | **High** | High | **AC-24 checkpointing** — probability arrays persisted; all analysis is post-processing |
-| R8 | ~~Too few day-2 frauds~~ **Day-2 fraud count unverified** | Low | Low | *Re-rated: day 2 plausibly holds ~200–290 frauds — **more** than the 98 in the random test split. Verify in Step 1* |
+| R8 | ~~Too few day-2 frauds~~ **CLOSED — verified** | – | – | Day 1: 144,786 rows / 281 frauds / €33,239. Day 2: 140,021 rows / **211 frauds** / €26,889. Day 2 holds **2.2× more frauds** than a random 20% test split (~98), so the temporal check is statistically viable. |
 | R9 | Slides exceed 15:00 | Med | High | Deck exists by end of week 3, rehearsed with a timer |
 | **R10** | **Uneven contribution / no accountability** | **High** | High | Named owner per component (Step 0); one defender per figure |
 | **R11** | **`.ipynb` merge conflicts destroy work** | High | Med | One notebook per owner; merge only at integration points |

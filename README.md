@@ -50,7 +50,25 @@ A global threshold does the exact opposite on those two rows.
 `V1`–`V28` are anonymised PCA components; `Time` and `Amount` are raw.
 `Amount` is in **EUR** (European cardholders, September 2013).
 
-The CSV is **not** committed. Download it via the Kaggle API.
+The CSV is **not** committed (144MB, gitignored). Fetch it into `data/`:
+
+```bash
+curl -sL -H "Authorization: Bearer $KAGGLE_TOKEN" \
+  https://www.kaggle.com/api/v1/datasets/download/mlg-ulb/creditcardfraud \
+  -o data/cc.zip && unzip -o data/cc.zip -d data/ && rm data/cc.zip
+```
+
+A copy without the `Time` column is also on OpenML (`data_id=1597`) and needs no
+credentials — but `Time` is required for `hour_of_day` and the temporal check.
+
+### Verified dataset facts
+
+284,807 rows · 492 frauds (0.173%) · 31 columns · 0 nulls · `Time` spans 48.0 h.
+
+**42% of frauds (205 of 492) are worth less than the €3 review fee**, and 27 are
+exactly €0 — so a cost-optimal policy ignores nearly half of all fraud on
+purpose. Fraud is *bimodal in cost terms*: median €9.25 (below the legit median
+of €22.00) but mean €122.21 (above legit's €88.29), driven by a heavy tail.
 
 ## Layout
 
@@ -104,7 +122,7 @@ python3.11 -m venv .venv
 ## Status
 
 - [x] Cost model — `total_cost`, `cost_curve`, `policy_e_predict`, `optimal_threshold`, `undo_class_weight`, `best_amount_baseline`
-- [ ] EDA
+- [x] EDA — `notebooks/01_eda.ipynb`, all cells execute clean
 - [~] Preprocessing — `hour_of_day`, `cyclic_encode_hour`, `stratified_split_60_20_20` done; scaling pending the dataset
 - [ ] Model matrix (≥3 models)
 - [ ] Evaluation & error analysis

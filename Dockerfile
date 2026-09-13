@@ -14,6 +14,11 @@ RUN apt-get update \
 # Non-root user (docker-patterns: never run as root)
 RUN groupadd -g 1001 app && useradd -u 1001 -g app -m -s /bin/bash app
 
+# Create the Jupyter config dir owned by app BEFORE any named volume mounts
+# over it. A fresh named volume inherits the image path's ownership; without
+# this it mounts root-owned and the non-root user cannot write there.
+RUN mkdir -p /home/app/.jupyter && chown -R app:app /home/app
+
 WORKDIR /work
 
 COPY requirements.txt .
