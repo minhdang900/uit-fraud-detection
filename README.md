@@ -73,11 +73,21 @@ of €22.00) but mean €122.21 (above legit's €88.29), driven by a heavy tail
 ## Layout
 
 ```
+paths.py                     resolves where the submission bundle lives
 fraud_cost.py                cost model (test-driven)
 preprocessing.py             feature prep and splitting (test-driven)
-tests/                       11 tests, every expectation hand-computed
-notebooks/                   smoke test
+modeling.py                  champion selection + pre-registration guard
+run_model_matrix.py          fit 6 configs → pre-register → only then score test
+analyse_results.py           baselines, Policy A vs E, paired bootstrap
+verify_results.py            recompute every headline number from raw arrays
+verify_calibration.py        recompute the tail-calibration numbers in §5.7
+make_figures.py              all 14 report/slide figures (300 dpi)
+demo.py                      one-command walkthrough — no 144MB CSV needed
+tests/                       42 tests, every expectation hand-computed
+notebooks/                   cost demo · EDA · error analysis · calibration
 docs/PLAN.md                 implementation plan (consensus-reviewed)
+docs/AUDIT.md                independent audit of this project
+../08-Nop-bai/               the assembled submission bundle (outside this repo)
 .github/workflows/tests.yml  CI: pytest on every push and PR
 ```
 
@@ -87,9 +97,22 @@ docs/PLAN.md                 implementation plan (consensus-reviewed)
 
 ```bash
 ./run.sh          # build, start, wait for healthy, open JupyterLab
+./run.sh demo     # print the whole result story to the terminal
 ./run.sh test     # run the test suite inside the container
+./run.sh verify   # recompute every headline number from the raw arrays
 ./run.sh logs     # follow logs
 ./run.sh stop     # stop and remove
+```
+
+`./run.sh demo` is the fastest way to see what this project concluded. It reads
+only the stored probability arrays, so it runs on a machine that never
+downloaded the dataset, and it recomputes every figure it prints rather than
+reciting one:
+
+```bash
+./run.sh demo                    # cost model → policy rule → results → baselines
+./run.sh demo --score 0.02 1500  # score one transaction under both policies
+./run.sh demo --quick            # skip the 1,000-replicate bootstrap
 ```
 
 `run.sh` prints the URL with the token. On first run it generates a random
@@ -114,16 +137,36 @@ versions pip may fall back to building scikit-learn from source, which takes a
 very long time on Apple Silicon.
 
 ```bash
+rm -rf .venv                 # any pre-existing .venv here is a stale stub
 python3.11 -m venv .venv
 ./.venv/bin/pip install -r requirements.txt
-./.venv/bin/python -m pytest tests/ -v
+PYTHONPATH=. ./.venv/bin/python -m pytest tests/ -v
 ```
+
+`PYTHONPATH=.` matters: the empty root `conftest.py` is what puts the repo on
+`sys.path` under pytest, and the container sets `PYTHONPATH=/work` for
+everything else.
 
 ## Status
 
 - [x] Cost model — `total_cost`, `cost_curve`, `policy_e_predict`, `optimal_threshold`, `undo_class_weight`, `best_amount_baseline`
 - [x] EDA — `notebooks/01_eda.ipynb`, all cells execute clean
-- [~] Preprocessing — `hour_of_day`, `cyclic_encode_hour`, `stratified_split_60_20_20` done; scaling pending the dataset
-- [ ] Model matrix (≥3 models)
-- [ ] Evaluation & error analysis
-- [ ] Report + slides
+- [x] Preprocessing — `hour_of_day`, `cyclic_encode_hour`, `stratified_split_60_20_20`, scaler fit on train only (asserted)
+- [x] Model matrix — 3 families × 2 imbalance arms, champion pre-registered before test was scored
+- [x] Evaluation & error analysis — baselines, paired bootstrap, calibration, `notebooks/02`–`03`
+- [x] Report + slides — assembled in `../08-Nop-bai/` (a deliverable, deliberately not in git)
+- [ ] **Cut the deck to ≤15 min** — it currently runs ~17–21 min against a hard cap;
+      plan at the top of `../08-Nop-bai/02-Slide/Kich-ban-thuyet-trinh.md`, guarded by an
+      xfail in `tests/test_submission.py`
+
+### Headline result
+
+| | |
+|---|---|
+| Champion (pre-registered `2026-09-13`) | `xgb/balanced` |
+| Test cost | **€2,223.93** — 79% below doing nothing |
+| Best no-ML rule | €12,398.63 — *worse than doing nothing* |
+| Can a winner be named? | **No.** €6.67 gap, CI spans 0, champion wins 53.3% of replicates |
+
+The last row is the finding, not a failure: with 98 test frauds and a heavy-tailed
+cost the effective sample size is 18.1. See `docs/RESULTS.md`.

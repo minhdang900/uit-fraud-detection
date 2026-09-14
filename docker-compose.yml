@@ -15,11 +15,19 @@ services:
       - /work/.venv
       # Named volume keeps JupyterLab UI settings across restarts
       - jupyter-settings:/home/app/.jupyter
+      # The submission bundle lives OUTSIDE this repo, so it is not covered by
+      # the bind mount above. Without this the container cannot see it at all:
+      # make_figures.py would write into a fresh empty directory and
+      # test_submission.py would skip its ten guards silently.
+      - ${NOP_BAI_PATH:-../08-Nop-bai}:/nop-bai
     environment:
       # No default on purpose: a committed token is a credential in git.
       # run.sh generates a random one into .env (gitignored) on first run.
       JUPYTER_TOKEN: ${JUPYTER_TOKEN:?missing - run ./run.sh, which generates .env}
       PYTHONPATH: /work
+      # Resolved by paths.bundle_dir(); the host layout (../08-Nop-bai) does
+      # not exist inside the container, so the mount point is passed explicitly.
+      NOP_BAI_DIR: /nop-bai
       # Anonymous volumes mount root-owned; keep pytest's cache on writable tmp
       PYTEST_ADDOPTS: "-o cache_dir=/tmp/.pytest_cache"
     security_opt:

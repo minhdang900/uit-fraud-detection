@@ -13,20 +13,41 @@ Tài liệu này trả lời hai câu hỏi khác nhau:
 ./run.sh test
 ```
 
-Kết quả mong đợi: **18 passed**. Nếu thấy bất kỳ FAILED nào, có gì đó đã trôi —
-đừng nộp báo cáo cho tới khi hiểu vì sao.
+Kết quả mong đợi: **41 passed, 1 xfailed**. Nếu thấy bất kỳ FAILED nào, có gì đó
+đã trôi — đừng nộp báo cáo cho tới khi hiểu vì sao.
 
-Bộ test chia làm ba nhóm, mỗi nhóm bảo vệ một thứ khác nhau:
+> `1 xfailed` là **có chủ đích**: đó là test thời lượng bài nói, đang ghi nhận một
+> lỗi đã biết và chưa sửa (bộ slide 30 trang vượt trần 15 phút — xem Tiêu chí 5).
+> Khi nào cắt slide xong, test đó sẽ chuyển sang XPASS và **làm cả bộ đỏ** để buộc
+> gỡ dấu `xfail` — cố ý như vậy, để lỗi không bị quên.
+
+Bộ test chia làm sáu nhóm, mỗi nhóm bảo vệ một thứ khác nhau:
 
 | Nhóm | Số test | Bảo vệ điều gì |
 |---|---|---|
 | `test_fraud_cost.py` | 8 | Hàm chi phí đúng về mặt toán học |
 | `test_preprocessing.py` | 3 | Tiền xử lý và chia tập đúng |
 | `test_modeling.py` | 2 | Chọn champion không làm mất họ mô hình nào |
+| `test_preregistration.py` | 6 | Chạy lại **không âm thầm ghi đè** bản đăng ký trước |
+| `test_demo.py` | 7 | Con số demo in ra khớp con số báo cáo |
 | `test_results_reproducible.py` | 5 | **Số trong báo cáo vẫn là số pipeline tạo ra** |
+| `test_submission.py` | 10 (+1 xfail) | Bộ nộp đủ file, không thiếu hình, không lẫn rác |
 
-Nhóm thứ tư là nhóm quan trọng nhất khi đi bảo vệ. Ba nhóm đầu chứng minh *code
-đúng*; nhóm thứ tư chứng minh *báo cáo đúng*.
+Ba nhóm đầu chứng minh *code đúng*. Ba nhóm sau quan trọng hơn khi đi bảo vệ:
+chúng chứng minh *quy trình đúng*, *báo cáo đúng*, và *bộ nộp đúng*.
+
+## Phần 1b — Chạy demo trước hội đồng
+
+```bash
+./run.sh demo                    # toàn bộ câu chuyện kết quả
+./run.sh demo --score 0.02 1500  # chấm một giao dịch bất kỳ
+```
+
+Demo **không đọc bảng kết quả nào** — nó tính lại từ mảng xác suất thô, kể cả
+ngưỡng (suy từ validation rồi mới áp lên test). Nếu có gì trôi, demo sẽ in ra số
+khác báo cáo và `test_demo.py` sẽ đỏ trước khi điều đó xảy ra trên máy chiếu.
+
+Demo cũng **không cần file CSV 144 MB**, nên chạy được trên máy mượn.
 
 ### Kiểm chứng thủ công từng con số
 
@@ -130,6 +151,29 @@ Bốn điều báo cáo tự nêu ra, không né tránh:
 
 Một báo cáo tự nêu giới hạn của mình mạnh hơn một báo cáo giấu chúng đi.
 
+### Tiêu chí 5 — bài nói có vừa khung giờ không? ❌ CHƯA
+
+| Nhịp nói | Tổng | So với trần cứng 15:00 |
+|---|---|---|
+| 140 âm tiết/phút (chậm, rõ) | ~20:55 | **vượt 5:55** |
+| 170 âm tiết/phút (bình thường) | ~17:13 | **vượt 2:13** |
+| 190 âm tiết/phút (nhanh) | ~15:24 | **vượt 0:24** |
+
+Bộ 30 slide hiện tại vượt giờ ở **mọi** nhịp nói. Giảng viên nói rõ *"đúng 15 phút
+là đồng hồ reo, không cho trình bày nữa"* — nên đây không phải lỗi nhỏ: phần Kết
+luận sẽ bị cắt mất.
+
+**Cách đánh giá đúng:** nội dung đạt, *đóng gói* chưa đạt. Phương án cắt cụ thể
+(≈1.000 âm tiết, về 13:41) nằm ở đầu file `../08-Nop-bai/02-Slide/Kich-ban-thuyet-trinh.md`.
+Test `test_the_talk_fits_inside_the_fifteen_minute_cap` canh điều kiện này.
+
+---
+
+## Phần 2b — Kiểm toán độc lập
+
+`docs/AUDIT.md` ghi lại một lượt kiểm toán toàn bộ đồ án: những gì đã kiểm chứng
+được, những lỗi tìm thấy, và những gì còn lại. Đọc file đó trước khi nộp.
+
 ---
 
 ## Phần 3 — Dấu hiệu có vấn đề
@@ -139,6 +183,8 @@ Nếu gặp bất kỳ điều nào dưới đây, dừng lại và điều tra:
 | Dấu hiệu | Nghĩa là gì |
 |---|---|
 | `./run.sh test` có FAILED | Số trong báo cáo không còn khớp pipeline |
+| `test_submission.py` đỏ | Bộ nộp thiếu hình, thiếu thư mục, hoặc lẫn file tạm |
+| Chạy lại `run_model_matrix.py` mà `preregistration.json` đổi ngày | Bản đăng ký trước đã bị ghi đè — bằng chứng toàn vẹn mất hiệu lực |
 | `reviews + lost ≠ cost` | Hàm chi phí hoặc confusion matrix hỏng |
 | Chi phí test **thấp hơn** chi phí validation nhiều | Có thể đã chọn ngưỡng trên test — rò rỉ |
 | Accuracy ≈ 99.8% được nêu như thành tích | Đang đánh giá sai độ đo |
@@ -149,11 +195,12 @@ Nếu gặp bất kỳ điều nào dưới đây, dừng lại và điều tra:
 
 ## Phần 4 — Kiểm tra trước khi nộp
 
-- [ ] `./run.sh test` → 18 passed
+- [ ] `./run.sh test` → 41 passed, 1 xfailed
 - [ ] 3 notebook chạy hết, 0 lỗi
 - [ ] Số trong `docs/REPORT.md` khớp `reproduce_headline()`
 - [ ] Số trong `docs/SLIDES.md` khớp `docs/RESULTS.md`
 - [ ] `artifacts/preregistration.json` có ngày trước kết quả test
-- [ ] Slide tập trình bày có bấm giờ, dưới 15:00
+- [ ] **Cắt slide về ≤15:00** (hiện 17–21 phút) rồi tập nói có bấm giờ
+- [ ] `./run.sh demo` chạy sạch, số khớp báo cáo
 - [ ] Mỗi thành viên bảo vệ được ít nhất một hình mình phụ trách
 - [ ] Chuẩn bị câu trả lời CART (chưa học cây quyết định nhưng dùng RF/XGBoost)

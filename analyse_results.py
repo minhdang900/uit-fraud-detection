@@ -7,11 +7,13 @@ from pathlib import Path
 
 import numpy as np
 
+import paths
+
 from fraud_cost import (best_amount_baseline, optimal_threshold,
                         policy_e_predict, total_cost, undo_class_weight)
 
 ROOT = Path(__file__).resolve().parent
-ART = ROOT / "artifacts"
+ART = paths.artifacts_dir()
 C = 3.0
 SEED = 42
 
