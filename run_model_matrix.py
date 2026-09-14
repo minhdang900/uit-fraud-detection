@@ -10,11 +10,14 @@ Test is never used for selection. Artifacts land in artifacts/ so every
 downstream analysis is pure post-processing on stored arrays.
 """
 import json
+import sys
 import time
 from datetime import date
 from pathlib import Path
 
 import numpy as np
+
+import paths
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -23,13 +26,14 @@ from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier
 
 from fraud_cost import optimal_threshold, total_cost
-from modeling import select_champion_per_family
+from modeling import (PreregistrationViolation, build_preregistration,
+                      select_champion_per_family, verify_preregistration)
 from preprocessing import cyclic_encode_hour, hour_of_day, stratified_split_60_20_20
 
 SEED = 42
 C_REVIEW = 3.0
 ROOT = Path(__file__).resolve().parent
-ART = ROOT / "artifacts"
+ART = paths.artifacts_dir(must_exist=False)
 ART.mkdir(exist_ok=True)
 
 
@@ -106,18 +110,35 @@ np.savez_compressed(ART / "val_probabilities.npz",
 
 # ------------------------------------------- phase 2: pre-register champions
 champions = select_champion_per_family(results)
-prereg = {
-    "date": str(date.today()),
-    "selected_on": "validation split only; test not yet scored",
-    "c_review": C_REVIEW,
-    "champions": champions,
-    "declared_winner": f"{champions[0]['family']}/{champions[0]['arm']}",
-    "note": ("Declared BEFORE any test scoring. The headline number is this "
-             "model's test cost whether or not it turns out lowest on test."),
-}
-(ART / "preregistration.json").write_text(json.dumps(prereg, indent=2))
-log(f"PRE-REGISTERED champion: {prereg['declared_winner']} "
-    f"(val cost EUR{champions[0]['cost']:,.2f})")
+declared = f"{champions[0]['family']}/{champions[0]['arm']}"
+
+# The pre-registration is EVIDENCE, not output. Its whole value is that it
+# carries a date and was written before test was ever scored. Overwriting it
+# on a rerun destroys exactly the thing it is meant to prove -- the file would
+# always agree with whatever the latest run produced, which is worth nothing.
+#
+# So: write it once. On every later run, VERIFY against it instead. If
+# validation now prefers a different model, the report's integrity claim is
+# void and must be explained, not silently refreshed.
+PREREG = ART / "preregistration.json"
+
+if PREREG.exists() and "--rewrite-preregistration" not in sys.argv:
+    recorded = json.loads(PREREG.read_text())
+    log(f"pre-registration exists (dated {recorded['date']}) -- verifying, not rewriting")
+    try:
+        prereg = verify_preregistration(recorded, champions, C_REVIEW)
+    except PreregistrationViolation as exc:
+        raise SystemExit(str(exc))
+    log(f"VERIFIED champion unchanged: {declared} (val cost EUR{champions[0]['cost']:,.2f})")
+else:
+    prereg = build_preregistration(champions, C_REVIEW, date.today())
+    PREREG.write_text(json.dumps(prereg, indent=2))
+    log(f"PRE-REGISTERED champion: {declared} "
+        f"(val cost EUR{champions[0]['cost']:,.2f})")
+
+# Carry the RECORDED champions forward, not this run's ranking. If they ever
+# diverge the run has already aborted above; this makes the dependency explicit.
+champions = prereg["champions"]
 
 # ------------------------------------------- phase 3: score TEST, finalists only
 test_probs, test_rows = {}, []

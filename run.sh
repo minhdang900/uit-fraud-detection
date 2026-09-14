@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 # Run the fraud-detection lab in Docker.
 #   ./run.sh          build, start, wait for healthy, open browser
+#   ./run.sh demo     print the whole result story to the terminal
 #   ./run.sh test     run the test suite inside the container
+#   ./run.sh verify   recompute every headline number from raw arrays
 #   ./run.sh logs     follow container logs
 #   ./run.sh stop     stop and remove the container
 set -euo pipefail
 
 cd "$(dirname "$0")"
+
+# Thư mục bộ nộp bài nằm ở hai chỗ khác nhau tuỳ bản sao đang chạy:
+#   - trong repo:        anh em cùng cấp  ../08-Nop-bai
+#   - trong chính bộ nộp: là thư mục cha  ..
+# Giải quyết ở đây để MỘT file docker-compose.yml dùng được cho cả hai, thay vì
+# để hai bản sao trôi khác nhau. Logic này phản chiếu paths.bundle_dir().
+if [ -d ../01-Bao-cao ]; then
+  NOP_BAI_PATH=..
+else
+  NOP_BAI_PATH=../08-Nop-bai
+fi
+export NOP_BAI_PATH
 
 # A committed token is a credential in git, and any page you visit could try
 # it against localhost. Generate a random one per machine into .env, which is
@@ -23,6 +37,14 @@ else
 fi
 export JUPYTER_TOKEN="$TOKEN"
 URL="http://localhost:8888/lab?token=${TOKEN}"
+
+ensure_up() {
+  if [ "$(docker inspect --format '{{.State.Running}}' uit-fraud-lab 2>/dev/null)" != "true" ]; then
+    echo "Container is not running -- starting it first."
+    docker compose up -d --build >/dev/null
+    wait_healthy
+  fi
+}
 
 open_browser() {
   case "$(uname -s)" in
@@ -60,8 +82,21 @@ case "${1:-up}" in
     echo
     open_browser "$URL"
     ;;
+  demo)
+    # Extra args pass through, e.g. ./run.sh demo --score 0.02 1500
+    shift || true
+    ensure_up
+    docker compose exec -T lab python demo.py "$@"
+    ;;
   test)
+    ensure_up
     docker compose exec -T lab python -m pytest tests/ -v
+    ;;
+  verify)
+    ensure_up
+    docker compose exec -T lab python -c "
+from verify_results import reproduce_headline
+for k, v in reproduce_headline().items(): print(f'{k:<26} {v}')"
     ;;
   logs)
     docker compose logs -f lab
@@ -70,7 +105,7 @@ case "${1:-up}" in
     docker compose down
     ;;
   *)
-    echo "usage: ./run.sh [up|test|logs|stop]" >&2
+    echo "usage: ./run.sh [up|demo|test|verify|logs|stop]" >&2
     exit 1
     ;;
 esac

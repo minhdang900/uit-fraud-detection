@@ -9,6 +9,7 @@ from pathlib import Path
 
 import numpy as np
 
+import paths
 from fraud_cost import optimal_threshold, total_cost
 
 ROOT = Path(__file__).resolve().parent
@@ -22,7 +23,7 @@ def reproduce_headline(c_review=3.0, artifacts_dir=None):
     same order the integrity claim depends on. Reading a cached threshold
     would make these tests vacuous.
     """
-    art = Path(artifacts_dir) if artifacts_dir else ROOT / "artifacts"
+    art = Path(artifacts_dir) if artifacts_dir else paths.artifacts_dir()
 
     champion = json.loads((art / "preregistration.json").read_text())["declared_winner"]
 
